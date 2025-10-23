@@ -5,10 +5,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Game</title>
-  <link rel="stylesheet" href="letter.css">
-  <link rel="stylesheet" href="button.css">
-  <link rel="stylesheet" href="screen.css">
-  <script type="module" src="main.js" defer></script>
+
+  <!-- Archivos CSS organizados en /css/ -->
+  <link rel="stylesheet" href="css/letter.css">
+  <link rel="stylesheet" href="css/button.css">
+  <link rel="stylesheet" href="css/screen.css">
+
+  <!-- Import map: debe estar antes de cualquier script tipo module que use "three" -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Archivo principal organizado en /js/ -->
+  <script type="module" src="js/main.js" defer></script>
 </head>
 
 <body>
@@ -29,11 +43,20 @@
   <!-- 🟢 SCREEN 2 - ESCENA THREE.JS -->
   <div id="screen2" class="screen">
     <div id="container"></div>
-    <button id="backButton" class="fill" style="position:absolute; top:20px; right:20px;">Volver al menú</button>
+
+    <div id="info">
+      Octree threejs demo - basic collisions with static triangle mesh<br />
+      MOUSE to look around and to throw balls<br/>
+      WASD to move and SPACE to jump
+    </div>
+
+    <button id="backButton" class="fill" style="position:absolute; top:20px; right:20px;">
+      Volver al menú
+    </button>
   </div>
 
   <!-- 🔴 SCREEN 3 - FINAL / GAME OVER -->
-  <div id="screen3" class="screen">
-  </div>
+  <div id="screen3" class="screen"></div>
 </body>
+
 </html>
