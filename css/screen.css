@@ -1,42 +1,116 @@
-body {
-  margin: 0;
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
-  background: #000;
-}
-
-/* Cada pantalla ocupa todo el viewport */
+/* ==========================================
+   🟣 GENERAL SCREENS
+========================================== */
 .screen {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
-  display: none;
   justify-content: center;
   align-items: center;
+  background: #000;
+  overflow: hidden;
+}
+
+.screen:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .screen.active {
+  display: flex !important;
+  visibility: visible !important;
+  pointer-events: all !important;
+}
+
+/* ==========================================
+   🟢 PANEL ESC
+========================================== */
+.panelEsc {
+  position: absolute;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+.panelEsc.active {
+  display: flex !important;
+  opacity: 1;
+}
+
+.panel-content {
+  background: #1c1c1c;
+  padding: 40px 60px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 0 30px #8338ec;
+  animation: popup 0.3s ease forwards;
+}
+
+@keyframes popup {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.panel-content h3 {
+  color: #fff;
+  font-size: 2em;
+  margin-bottom: 25px;
+  letter-spacing: 2px;
+}
+
+.panel-buttons button {
+  display: block;
+  width: 200px;
+  margin: 12px auto;
+  padding: 12px;
+  font-size: 1em;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fill.success {
+  background-color: #28a745;
+  color: white;
+}
+
+.fill.danger {
+  background-color: #c82333;
+  color: white;
+}
+
+/* ==========================================
+   🏆 END SCREENS
+========================================== */
+.end-screen {
   display: flex;
-}
-
-/* Ocultar por completo las pantallas no activas */
-#screen1:not(.active),
-#screen2:not(.active),
-#screen3:not(.active) {
-  display: none !important;
-}
-
-/* Contenedor del canvas */
-#container {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   width: 100%;
-  height: 100vh;
-  position: relative;
-  z-index: 1;
+  height: 100%;
+  background: radial-gradient(circle, #4a148c, #12002b);
+  color: white;
 }
 
-#backButton {
-  z-index: 10;
+.end-screen.win {
+  background: radial-gradient(circle, #012d03, #1b5e20);
+}
+
+.end-screen.lose {
+  background: radial-gradient(circle, #d32f2f, #3e0000);
+}
+
+.end-screen h2 {
+  font-size: 3em;
+  text-shadow: 0 0 20px black;
+  margin-bottom: 40px;
 }

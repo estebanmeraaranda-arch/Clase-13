@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Game</title>
 
-  <!-- Archivos CSS organizados en /css/ -->
+  <!-- CSS -->
   <link rel="stylesheet" href="css/letter.css">
   <link rel="stylesheet" href="css/button.css">
   <link rel="stylesheet" href="css/screen.css">
 
-  <!-- Import map: debe estar antes de cualquier script tipo module que use "three" -->
+  <!-- Importmap -->
   <script type="importmap">
   {
     "imports": {
@@ -21,7 +21,6 @@
   }
   </script>
 
-  <!-- Archivo principal organizado en /js/ -->
   <script type="module" src="js/main.js" defer></script>
 </head>
 
@@ -33,7 +32,6 @@
         <h2>My.Game</h2>
         <h2>My.Game</h2>
       </div>
-      <p></p>
       <div class="buttons">
         <button id="startButton" class="fill">Start Game</button>
       </div>
@@ -44,19 +42,40 @@
   <div id="screen2" class="screen">
     <div id="container"></div>
 
-    <div id="info">
-      Octree threejs demo - basic collisions with static triangle mesh<br />
-      MOUSE to look around and to throw balls<br/>
-      WASD to move and SPACE to jump
+    <!-- 🎮 PANEL ESC -->
+    <div id="panelEsc" class="panelEsc">
+      <div class="panel-content">
+        <h3>PAUSA</h3>
+        <div class="panel-buttons">
+          <button id="resumeBtn" class="fill">Volver al juego</button>
+          <button id="menuBtn" class="fill">Volver al menú</button> <!-- RENAMED -->
+          <button id="winBtn" class="fill success">Ganaste </button>
+          <button id="loseBtn" class="fill danger">Perdiste </button>
+        </div>
+      </div>
     </div>
-
-    <button id="backButton" class="fill" style="position:absolute; top:20px; right:20px;">
-      Volver al menú
-    </button>
   </div>
 
-  <!-- 🔴 SCREEN 3 - FINAL / GAME OVER -->
-  <div id="screen3" class="screen"></div>
-</body>
+  <!--  SCREEN 3 - GANASTE -->
+  <div id="screen3" class="screen">
+    <section class="end-screen win">
+      <h2> ¡GANASTE! </h2>
+      <div class="buttons">
+        <button id="playAgainWin" class="fill">Volver a jugar</button>
+        <button id="menuWin" class="fill">Volver al menú</button> <!-- stays for screen3 -->
+      </div>
+    </section>
+  </div>
 
+  <!--  SCREEN 4 - PERDISTE -->
+  <div id="screen4" class="screen">
+    <section class="end-screen lose">
+      <h2> Perdiste :c</h2>
+      <div class="buttons">
+        <button id="playAgainLose" class="fill">Volver a jugar</button>
+        <button id="menuLose" class="fill">Volver al menú</button>
+      </div>
+    </section>
+  </div>
+</body>
 </html>
