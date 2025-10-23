@@ -1,0 +1,42 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  background: #000;
+}
+
+/* Cada pantalla ocupa todo el viewport */
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* Ocultar por completo las pantallas no activas */
+#screen1:not(.active),
+#screen2:not(.active),
+#screen3:not(.active) {
+  display: none !important;
+}
+
+/* Contenedor del canvas */
+#container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+#backButton {
+  z-index: 10;
+}

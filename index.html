@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Game</title>
+  <link rel="stylesheet" href="letter.css">
+  <link rel="stylesheet" href="button.css">
+  <link rel="stylesheet" href="screen.css">
+  <script type="module" src="main.js" defer></script>
+</head>
+
+<body>
+  <!-- 🟣 SCREEN 1 - MENÚ INICIAL -->
+  <div id="screen1" class="screen active">
+    <section class="menu-screen">
+      <div class="content">
+        <h2>My.Game</h2>
+        <h2>My.Game</h2>
+      </div>
+      <p></p>
+      <div class="buttons">
+        <button id="startButton" class="fill">Start Game</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 🟢 SCREEN 2 - ESCENA THREE.JS -->
+  <div id="screen2" class="screen">
+    <div id="container"></div>
+    <button id="backButton" class="fill" style="position:absolute; top:20px; right:20px;">Volver al menú</button>
+  </div>
+
+  <!-- 🔴 SCREEN 3 - FINAL / GAME OVER -->
+  <div id="screen3" class="screen">
+  </div>
+</body>
+</html>

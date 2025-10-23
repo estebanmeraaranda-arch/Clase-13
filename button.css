@@ -1,0 +1,62 @@
+/* button.css */
+button {
+  background: none;
+  border: 2px solid;
+  font: inherit;
+  line-height: 1;
+  margin: 0.5em;
+  
+  /* ❌ ELIMINAR ESTAS DOS LÍNEAS COMPLETAMENTE */
+  /* position: absolute; */ 
+  /* top: 70%; */
+  
+  padding: 1em 2em;
+  color: var(--color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+
+  /* visible siempre */
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  z-index: 1; /* Aseguramos que sea bajo */
+}
+
+/* ✨ Hover: brillo y leve elevación */
+button:hover,
+button:focus {
+  border-color: var(--hover);
+  color: #fff;
+  transform: translateY(-6px) scale(1.07);
+  box-shadow: 0 0 20px var(--hover);
+  animation: pulse 1.5s infinite alternate;
+}
+
+/* 🖱️ Click: pequeña contracción */
+button:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 0 10px var(--hover);
+  animation: none;
+}
+
+/* Colores */
+.fill { 
+  --color: #a972cb; 
+  --hover: #c79fe6; 
+}
+
+/* Centrado del botón */
+.buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 🌟 Animación de pulso */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px var(--hover);
+  }
+  100% {
+    box-shadow: 0 0 25px var(--hover);
+  }
+}
