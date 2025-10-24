@@ -2,7 +2,7 @@
 import * as Game from "./gamee.js";
 
 /* ================================
-    Referencias a pantallas y botones
+   🔹 Referencias a pantallas y botones
 ================================== */
 const screens = {
   screen1: document.getElementById("screen1"),
@@ -15,7 +15,6 @@ const startBtn = document.getElementById("startButton");
 const panelEsc = document.getElementById("panelEsc");
 
 const resumeBtn = document.getElementById("resumeBtn");
-const menuBtn = document.getElementById("menuBtn");
 const winBtn = document.getElementById("winBtn");
 const loseBtn = document.getElementById("loseBtn");
 
@@ -25,132 +24,130 @@ const playAgainLose = document.getElementById("playAgainLose");
 const menuLose = document.getElementById("menuLose");
 
 /* ================================
-   🎵 Rutas y control de audio
-   - introMusic: reproducida SOLO una vez al inicio (en el primer gesto)
-   - currentMusic: música manejada por setActiveScreen para screens != intro
-   - introConsumed: una vez que se sale de screen1, no volver a usar intro
+   🎵 Configuración de audio
 ================================== */
-const AUDIO_FOLDER = './audio/';
+const AUDIO_FOLDER = "./audio/";
 const AUDIO_FILES = {
-  screen1: 'Death By Glamour - Toby Fox.mp3', // usado para intro sólo al inicio
+  screen1: "Death By Glamour - Toby Fox.mp3",
   screen2: "NOW_S YOUR CHANCE TO BE A - Toby Fox.mp3",
-  screen3: 'Hip Shop - Toby Fox.mp3',
-  screen4: 'My Castle Town - Toby Fox.mp3'
+  screen3: "Hip Shop - Toby Fox.mp3",
+  screen4: "My Castle Town - Toby Fox.mp3",
 };
 
-let introMusic = null;
-let introStarted = false;   // si la intro se llegó a iniciar (por gesto)
-let introConsumed = false;  // si ya salimos de screen1 y no queremos volver a usar la intro
+let audioCtx = null;
+let gainNode = null;
 let currentMusic = null;
+let currentScreen = "screen1";
 
-/* Reproduce la música normal para cada screen (no la intro) */
-function playMusic(fileName) {
-  stopMusic();
-  if (!fileName) return;
-  const audio = new Audio(AUDIO_FOLDER + fileName);
-  audio.loop = true;
-  audio.volume = 0.6;
-  audio.play().catch((err) => console.warn("Audio no pudo reproducirse:", err));
-  currentMusic = audio;
+/* Inicializa el sistema de audio */
+async function initAudioSystem() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.6;
+  gainNode.connect(audioCtx.destination);
 }
 
+/* Carga y reproduce una pista */
+async function playMusic(screenName) {
+  stopMusic();
+  const file = AUDIO_FILES[screenName];
+  if (!file || !audioCtx) return;
+
+  try {
+    const response = await fetch(AUDIO_FOLDER + file);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.loop = true;
+    source.connect(gainNode);
+    source.start(0);
+    currentMusic = source;
+    console.log(`[Audio] Reproduciendo: ${file}`);
+  } catch (e) {
+    console.warn("[Audio] Error al reproducir:", e);
+  }
+}
+
+/* Detiene la pista actual */
 function stopMusic() {
   if (currentMusic) {
-    currentMusic.pause();
-    currentMusic.currentTime = 0;
+    try {
+      currentMusic.stop();
+    } catch {}
     currentMusic = null;
   }
 }
 
-/* Intro: se inicia sólo una vez en el primer gesto del usuario mientras está en screen1 */
-function startIntroNow() {
-  if (introStarted || introConsumed) return;
-  if (!screens.screen1 || !screens.screen1.classList.contains("active")) return;
-
-  introStarted = true;
-  introMusic = new Audio(AUDIO_FOLDER + AUDIO_FILES.screen1);
-  introMusic.loop = true;
-  introMusic.volume = 0.6;
-  introMusic.play().catch((err) => console.warn("Intro no pudo reproducirse:", err));
+/* ================================
+   ⚡ Intentar autoplay al iniciar
+================================== */
+async function tryAutoStartAudio() {
+  try {
+    await initAudioSystem();
+    await audioCtx.resume();
+    gainNode.gain.value = 0;
+    await playMusic("screen1");
+    gainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 1);
+    console.log("[Audio] Autoplay permitido, música de Screen 1 iniciada automáticamente.");
+  } catch (err) {
+    console.warn("[Audio] Autoplay bloqueado, esperando interacción del usuario...");
+    document.addEventListener("pointerdown", unlockAndStartAudio, { once: true, capture: true });
+    document.addEventListener("keydown", unlockAndStartAudio, { once: true, capture: true });
+    document.addEventListener("touchstart", unlockAndStartAudio, { once: true, capture: true });
+  }
 }
 
-/* Detener intro y marcarla como consumida (no usarla otra vez) */
-function stopIntroAndConsume() {
-  if (introMusic) {
-    try {
-      introMusic.pause();
-      introMusic.currentTime = 0;
-    } catch (e) {}
-    introMusic = null;
-  }
-  introConsumed = true;
-  introStarted = false;
+/* Si autoplay falla, se inicia tras el primer gesto */
+async function unlockAndStartAudio() {
+  await initAudioSystem();
+  await audioCtx.resume();
+  await playMusic("screen1");
+  console.log("[Audio] Reproducción iniciada tras interacción.");
 }
 
 /* ================================
-   🧠 Cambiar de pantalla
+   🧠 Control de pantallas
 ================================== */
-let currentScreen = (screens.screen1 && screens.screen1.classList.contains('active')) ? 'screen1' : null;
-
 function setActiveScreen(id) {
-  // ocultar todas
+  // Ocultar todas
   Object.values(screens).forEach((s) => {
-    if (!s) return;
-    s.classList.remove("active");
-    s.style.display = "none";
+    if (s) {
+      s.classList.remove("active");
+      s.style.display = "none";
+    }
   });
 
-  // mostrar target
+  // Mostrar la deseada
   const target = screens[id];
   if (target) {
     target.classList.add("active");
     target.style.display = "block";
   }
 
+  // Mostrar u ocultar botón Start
   if (startBtn) startBtn.style.display = id === "screen1" ? "" : "none";
 
-  // Si salimos de screen1 y existía la intro, detenerla y marcarla consumida
-  if (currentScreen === 'screen1' && id !== 'screen1') {
-    stopIntroAndConsume();
-  }
+  // Detener música actual y reproducir la del nuevo screen
+  stopMusic();
+  playMusic(id);
 
-  // Limpieza / inicio de juego
+  // Inicializar juego si es la screen 2
   if (id === "screen2") {
-    startGame();
+    const container = document.getElementById("container");
+    if (container) container.innerHTML = "";
+    if (typeof Game.cleanup === "function") Game.cleanup();
+    if (typeof Game.initGame === "function") Game.initGame();
   } else {
     if (typeof Game.cleanup === "function") Game.cleanup();
-  }
-
-  // Música: no forzar la intro desde aquí.
-  // Reproducir la música asociada a la screen actual (excepto la intro de inicio)
-  if (id === 'screen1') {
-    // Si la intro ya fue consumida, NO volver a reproducirla.
-    // Si la intro aún no se inició, la reproduciremos mediante el listener de gesto (no aquí).
-    if (introConsumed) {
-      // opcional: si quieres un music loop distinto para menu después, descomenta:
-      // playMusic(AUDIO_FILES.screen1);
-    }
-  } else {
-    // para otras pantallas reproducir su música normal
-    const audioFile = AUDIO_FILES[id] || null;
-    playMusic(audioFile);
   }
 
   currentScreen = id;
 }
 
 /* ================================
-   🕹️ Iniciar / Reiniciar juego
-================================== */
-function startGame() {
-  const container = document.getElementById("container");
-  if (container) container.innerHTML = "";
-  if (typeof Game.cleanup === "function") Game.cleanup();
-  if (typeof Game.initGame === "function") Game.initGame();
-}
-
-/* ================================
-   ⌨️ Eventos globales y botones
+   ⌨️ Eventos de botones
 ================================== */
 if (startBtn) startBtn.addEventListener("click", () => setActiveScreen("screen2"));
 
@@ -162,11 +159,6 @@ document.addEventListener("keydown", (e) => {
 
 if (resumeBtn) resumeBtn.addEventListener("click", () => {
   if (panelEsc) panelEsc.classList.remove("active");
-});
-
-if (menuBtn) menuBtn.addEventListener("click", () => {
-  if (panelEsc) panelEsc.classList.remove("active");
-  setActiveScreen("screen1");
 });
 
 if (winBtn) winBtn.addEventListener("click", () => {
@@ -186,43 +178,6 @@ if (playAgainLose) playAgainLose.addEventListener("click", () => setActiveScreen
 if (menuLose) menuLose.addEventListener("click", () => setActiveScreen("screen1"));
 
 /* ================================
-   🔔 Iniciar intro en el PRIMER gesto del usuario
-   Esto sortea las restricciones de autoplay: escucha el primer click/keydown.
-   Si el primer gesto ocurre en screen1, se reproduce la intro y se quitan listeners.
-   Si se cambia de screen antes de que el usuario haga gesto, la intro no se iniciará.
+   🚀 Ejecutar al cargar
 ================================== */
-function bindStartIntroOnFirstGesture() {
-  function onFirstGesture(e) {
-    console.log('[audio] primer gesto:', e.type, 'currentScreen=', currentScreen, 'introStarted=', introStarted, 'introConsumed=', introConsumed);
-    if (currentScreen === 'screen1' && !introConsumed && !introStarted) {
-      startIntroNow();
-      console.log('[audio] intentando reproducir intro...');
-    } else {
-      console.log('[audio] no se reproduce intro (no estaba en screen1 o ya consumida).');
-    }
-    // remover los listeners (solo queremos intentar una vez)
-    document.removeEventListener('pointerdown', onFirstGesture, true);
-    document.removeEventListener('touchstart', onFirstGesture, true);
-    document.removeEventListener('keydown', onFirstGesture, true);
-  }
-
-  // usar pointerdown/touchstart/keydown con capture y una sola invocación
-  document.addEventListener('pointerdown', onFirstGesture, true);
-  document.addEventListener('touchstart', onFirstGesture, true);
-  document.addEventListener('keydown', onFirstGesture, true);
-
-  // fallback: si la pestaña gana foco y ya hay interacción previa, intentar también
-  function onVisibility() {
-    if (document.visibilityState === 'visible') {
-      // intentar reproducir si estamos en menu y no se consumió la intro
-      if (currentScreen === 'screen1' && !introConsumed && !introStarted) {
-        startIntroNow();
-      }
-    }
-  }
-  document.addEventListener('visibilitychange', onVisibility);
-}
-
-// bindear intento de inicio al cargar
-bindStartIntroOnFirstGesture();
-
+window.addEventListener("load", tryAutoStartAudio);
