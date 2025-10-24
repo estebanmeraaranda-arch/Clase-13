@@ -129,11 +129,31 @@ async function setActiveScreen(id) {
 /* ================================
    ⌨️ Eventos globales
 ================================== */
-startBtn?.addEventListener("click", async () => {
-  if (!audioReady) return;
-  await setActiveScreen("screen2");
-});
+function handleStartGame() {
+  console.log("[Start] Intentando iniciar juego...");
+  
+  // Si el audio no está listo, intentar desbloquearlo primero
+  if (!audioReady) {
+    console.log("[Start] Audio no listo - intentando desbloquear...");
+    unlockAudioAndStart().then(() => {
+      console.log("[Start] Audio desbloqueado - cambiando a screen2");
+      setActiveScreen("screen2");
+    });
+    return;
+  }
 
+  // Si el audio está listo, cambiar directamente
+  console.log("[Start] Audio listo - cambiando a screen2");
+  setActiveScreen("screen2");
+}
+
+// Remover el listener anterior y agregar el nuevo
+if (startBtn) {
+  startBtn.removeEventListener("click", handleStartGame); // Limpiar posibles duplicados
+  startBtn.addEventListener("click", handleStartGame);
+}
+
+// El resto de los event listeners se mantienen igual
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && screens.screen2?.classList.contains("active")) {
     panelEsc?.classList.toggle("active");
@@ -163,14 +183,15 @@ menuLose?.addEventListener("click", () => setActiveScreen("screen1"));
    ⚡ Desbloquear y preparar audio
 ================================== */
 async function unlockAudioAndStart() {
-  await initAudioSystem();
-  await audioCtx.resume();
-  audioReady = true;
-  await playMusic("screen1");
-  console.log("[Audio] Sistema desbloqueado y música inicial reproducida.");
-  document.removeEventListener("pointerdown", unlockAudioAndStart, true);
-  document.removeEventListener("keydown", unlockAudioAndStart, true);
-  document.removeEventListener("touchstart", unlockAudioAndStart, true);
+  try {
+    await initAudioSystem();
+    await audioCtx.resume();
+    audioReady = true;
+    await playMusic(currentScreen);
+    console.log("[Audio] Sistema desbloqueado y música actual reproducida.");
+  } catch (error) {
+    console.error("[Audio] Error al desbloquear:", error);
+  }
 }
 
 /* ================================
@@ -185,8 +206,7 @@ window.addEventListener("load", async () => {
     console.log("[Audio] Autoplay exitoso.");
   } catch (e) {
     console.warn("[Audio] Autoplay bloqueado — esperando interacción del usuario.");
-    document.addEventListener("pointerdown", unlockAudioAndStart, true);
-    document.addEventListener("keydown", unlockAudioAndStart, true);
-    document.addEventListener("touchstart", unlockAudioAndStart, true);
+    // Solo agregamos el listener una vez y para click
+    document.addEventListener("click", unlockAudioAndStart, { once: true });
   }
 });
