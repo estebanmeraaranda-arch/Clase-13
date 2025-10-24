@@ -15,12 +15,12 @@ const startBtn = document.getElementById("startButton");
 const panelEsc = document.getElementById("panelEsc");
 
 const resumeBtn = document.getElementById("resumeBtn");
-const menuBtn = document.getElementById("menuBtn"); // nuevo: botón del panel de pausa
+const menuBtn = document.getElementById("menuBtn");
 const winBtn = document.getElementById("winBtn");
 const loseBtn = document.getElementById("loseBtn");
 
 const playAgainWin = document.getElementById("playAgainWin");
-const menuWin = document.getElementById("menuWin"); // ahora apunta al botón de screen3
+const menuWin = document.getElementById("menuWin");
 const playAgainLose = document.getElementById("playAgainLose");
 const menuLose = document.getElementById("menuLose");
 
@@ -114,7 +114,7 @@ if (resumeBtn) resumeBtn.addEventListener("click", () => {
   if (panelEsc) panelEsc.classList.remove("active");
 });
 
-if (menuBtn) menuBtn.addEventListener("click", () => { // listener para volver al menú desde pausa
+if (menuBtn) menuBtn.addEventListener("click", () => {
   if (panelEsc) panelEsc.classList.remove("active");
   setActiveScreen("screen1");
 });
@@ -133,7 +133,7 @@ if (loseBtn) loseBtn.addEventListener("click", () => {
    🔘 Botones pantalla GANASTE
 ================================== */
 if (playAgainWin) playAgainWin.addEventListener("click", () => setActiveScreen("screen2"));
-if (menuWin) menuWin.addEventListener("click", () => setActiveScreen("screen1")); // now works
+if (menuWin) menuWin.addEventListener("click", () => setActiveScreen("screen1"));
 
 /* ================================
    🔘 Botones pantalla PERDISTE
@@ -145,9 +145,13 @@ if (menuLose) menuLose.addEventListener("click", () => setActiveScreen("screen1"
    🔔 Inicializar estado / música al cargar
 ================================== */
 try {
+  // Asegúrate de que la música de screen1 se reproduzca al cargar
   if (screens.screen1 && screens.screen1.classList.contains("active")) {
     const audioFile = AUDIO_FILES.screen1 || null;
     playMusic(audioFile);
+  } else {
+    // Si no está activa, asegúrate de que se reproduzca al cambiar a screen1
+    setActiveScreen("screen1");
   }
 } catch (e) {
   console.warn("Error al iniciar música inicial:", e);
