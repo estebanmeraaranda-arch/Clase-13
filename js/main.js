@@ -2,7 +2,7 @@
 import * as Game from "./gamee.js";
 
 /* ================================
-   🔹 Referencias a pantallas y botones
+   🔹 Pantallas y botones
 ================================== */
 const screens = {
   screen1: document.getElementById("screen1"),
@@ -25,7 +25,7 @@ const playAgainLose = document.getElementById("playAgainLose");
 const menuLose = document.getElementById("menuLose");
 
 /* ================================
-   🎵 Audio global
+   🎵 Configuración de audio
 ================================== */
 const AUDIO_FOLDER = "./audio/";
 const AUDIO_FILES = {
@@ -35,62 +35,56 @@ const AUDIO_FILES = {
   screen4: "My Castle Town - Toby Fox.mp3",
 };
 
-let audioCtx = null;
-let gainNode = null;
+let audioCtx;
+let gainNode;
 let currentSource = null;
 let audioBuffers = {};
+let audioReady = false;
 let currentScreen = "screen1";
-let audioReady = false; // ✅ indica si ya se desbloqueó y precargó el audio
 
 /* ================================
-   🧩 Inicializar sistema de audio
+   🔊 Inicializar sistema de audio
 ================================== */
 async function initAudioSystem() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0.6;
-    gainNode.connect(audioCtx.destination);
-  }
-
-  // Precargar audio solo una vez
-  const promises = Object.entries(AUDIO_FILES).map(async ([key, file]) => {
-    if (!audioBuffers[key]) {
-      const resp = await fetch(AUDIO_FOLDER + file);
-      const data = await resp.arrayBuffer();
-      const buffer = await audioCtx.decodeAudioData(data);
-      audioBuffers[key] = buffer;
-    }
-  });
-  await Promise.all(promises);
-  audioReady = true;
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.7;
+  gainNode.connect(audioCtx.destination);
 }
 
 /* ================================
-   🎧 Reproducir canción
+   🎧 Precargar y reproducir música
 ================================== */
-function playMusic(screenKey) {
-  stopMusic();
-  const buffer = audioBuffers[screenKey];
-  if (!buffer || !audioCtx) return;
+async function loadBuffer(key) {
+  if (audioBuffers[key]) return audioBuffers[key];
+  const response = await fetch(AUDIO_FOLDER + AUDIO_FILES[key]);
+  const data = await response.arrayBuffer();
+  const buffer = await audioCtx.decodeAudioData(data);
+  audioBuffers[key] = buffer;
+  return buffer;
+}
 
+async function playMusic(screenKey) {
+  if (!audioCtx || audioCtx.state !== "running") return;
+  stopMusic();
+
+  const buffer = await loadBuffer(screenKey);
   const source = audioCtx.createBufferSource();
   source.buffer = buffer;
   source.loop = true;
   source.connect(gainNode);
   source.start(0);
   currentSource = source;
+  console.log(`[🎶] Reproduciendo: ${screenKey}`);
 }
 
-/* ================================
-   🔇 Detener música actual
-================================== */
 function stopMusic() {
   if (currentSource) {
     try {
-      currentSource.stop();
-    } catch (e) {}
-    currentSource.disconnect();
+      currentSource.stop(0);
+      currentSource.disconnect();
+    } catch {}
     currentSource = null;
   }
 }
@@ -98,11 +92,12 @@ function stopMusic() {
 /* ================================
    🧠 Cambiar de pantalla
 ================================== */
-function setActiveScreen(id) {
+async function setActiveScreen(id) {
   Object.values(screens).forEach((s) => {
-    if (!s) return;
-    s.classList.remove("active");
-    s.style.display = "none";
+    if (s) {
+      s.classList.remove("active");
+      s.style.display = "none";
+    }
   });
 
   const target = screens[id];
@@ -113,41 +108,30 @@ function setActiveScreen(id) {
 
   if (startBtn) startBtn.style.display = id === "screen1" ? "" : "none";
 
-  if (id === "screen2") {
-    startGame();
-  } else {
-    Game.cleanup?.();
+  // Cambiar música
+  if (audioReady && audioCtx.state === "running") {
+    await playMusic(id);
   }
 
-  // Cambiar música solo si el audio ya está listo y desbloqueado
-  if (audioReady && audioCtx && audioCtx.state === "running") {
-    playMusic(id);
+  // Control del juego
+  if (id === "screen2") {
+    const container = document.getElementById("container");
+    if (container) container.innerHTML = "";
+    Game.cleanup?.();
+    Game.initGame?.();
+  } else {
+    Game.cleanup?.();
   }
 
   currentScreen = id;
 }
 
 /* ================================
-   🕹️ Iniciar / Reiniciar juego
+   ⌨️ Eventos globales
 ================================== */
-function startGame() {
-  const container = document.getElementById("container");
-  if (container) container.innerHTML = "";
-  Game.cleanup?.();
-  Game.initGame?.();
-}
-
-/* ================================
-   ⌨️ Eventos globales y botones
-================================== */
-startBtn?.addEventListener("click", () => {
-  // Esperar a que el audio esté listo para evitar solapamientos
-  if (!audioReady) {
-    console.warn("[Audio] No listo aún, esperando...");
-    return;
-  }
-  stopMusic(); // detener la música del menú ANTES de pasar al juego
-  setActiveScreen("screen2");
+startBtn?.addEventListener("click", async () => {
+  if (!audioReady) return;
+  await setActiveScreen("screen2");
 });
 
 document.addEventListener("keydown", (e) => {
@@ -176,24 +160,33 @@ playAgainLose?.addEventListener("click", () => setActiveScreen("screen2"));
 menuLose?.addEventListener("click", () => setActiveScreen("screen1"));
 
 /* ================================
-   ⚡ Desbloquear audio en el primer gesto
+   ⚡ Desbloquear y preparar audio
 ================================== */
-async function unlockAndStartAudio() {
-  if (!audioCtx) {
-    await initAudioSystem();
-  }
-
+async function unlockAudioAndStart() {
+  await initAudioSystem();
   await audioCtx.resume();
-  playMusic("screen1");
-  console.log("[Audio] 🎶 Reproduciendo música de Screen 1");
-
-  // quitar listeners una vez desbloqueado
-  document.removeEventListener("pointerdown", unlockAndStartAudio, true);
-  document.removeEventListener("keydown", unlockAndStartAudio, true);
-  document.removeEventListener("touchstart", unlockAndStartAudio, true);
+  audioReady = true;
+  await playMusic("screen1");
+  console.log("[Audio] Sistema desbloqueado y música inicial reproducida.");
+  document.removeEventListener("pointerdown", unlockAudioAndStart, true);
+  document.removeEventListener("keydown", unlockAudioAndStart, true);
+  document.removeEventListener("touchstart", unlockAudioAndStart, true);
 }
 
-// Esperar primer interacción del usuario
-document.addEventListener("pointerdown", unlockAndStartAudio, true);
-document.addEventListener("keydown", unlockAndStartAudio, true);
-document.addEventListener("touchstart", unlockAndStartAudio, true);
+/* ================================
+   🚀 Al cargar la página
+================================== */
+window.addEventListener("load", async () => {
+  try {
+    await initAudioSystem();
+    await audioCtx.resume();
+    audioReady = true;
+    await playMusic("screen1");
+    console.log("[Audio] Autoplay exitoso.");
+  } catch (e) {
+    console.warn("[Audio] Autoplay bloqueado — esperando interacción del usuario.");
+    document.addEventListener("pointerdown", unlockAudioAndStart, true);
+    document.addEventListener("keydown", unlockAudioAndStart, true);
+    document.addEventListener("touchstart", unlockAudioAndStart, true);
+  }
+});
