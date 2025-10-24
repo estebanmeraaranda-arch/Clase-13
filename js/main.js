@@ -93,67 +93,84 @@ function stopMusic() {
    🧠 Cambiar de pantalla
 ================================== */
 async function setActiveScreen(id) {
-  Object.values(screens).forEach((s) => {
-    if (s) {
-      s.classList.remove("active");
-      s.style.display = "none";
+    console.log(`[Screen] Cambiando a ${id}`);
+    
+    // Ocultar todas las pantallas
+    Object.values(screens).forEach((s) => {
+        if (s) {
+            s.classList.remove("active");
+            s.style.display = "none";
+        }
+    });
+
+    // Mostrar pantalla objetivo
+    const target = screens[id];
+    if (target) {
+        target.classList.add("active");
+        target.style.display = "block";
+        console.log(`[Screen] ${id} activada`);
     }
-  });
 
-  const target = screens[id];
-  if (target) {
-    target.classList.add("active");
-    target.style.display = "block";
-  }
+    // Actualizar visibilidad del botón Start
+    if (startBtn) {
+        startBtn.style.display = id === "screen1" ? "" : "none";
+    }
 
-  if (startBtn) startBtn.style.display = id === "screen1" ? "" : "none";
+    // Intentar reproducir música
+    try {
+        if (audioCtx && audioCtx.state === "running") {
+            await playMusic(id);
+        }
+    } catch (err) {
+        console.warn("[Audio] Error al cambiar música:", err);
+    }
 
-  // Cambiar música
-  if (audioReady && audioCtx.state === "running") {
-    await playMusic(id);
-  }
+    // Control del juego
+    if (id === "screen2") {
+        const container = document.getElementById("container");
+        if (container) {
+            container.innerHTML = "";
+            console.log("[Game] Contenedor limpiado");
+        }
+        if (typeof Game.cleanup === "function") Game.cleanup();
+        if (typeof Game.initGame === "function") {
+            console.log("[Game] Iniciando juego");
+            Game.initGame();
+        }
+    } else {
+        if (typeof Game.cleanup === "function") Game.cleanup();
+    }
 
-  // Control del juego
-  if (id === "screen2") {
-    const container = document.getElementById("container");
-    if (container) container.innerHTML = "";
-    Game.cleanup?.();
-    Game.initGame?.();
-  } else {
-    Game.cleanup?.();
-  }
-
-  currentScreen = id;
+    currentScreen = id;
+    console.log(`[Screen] Cambio a ${id} completado`);
 }
 
 /* ================================
    ⌨️ Eventos globales
 ================================== */
-function handleStartGame() {
-  console.log("[Start] Intentando iniciar juego...");
-  
-  // Si el audio no está listo, intentar desbloquearlo primero
-  if (!audioReady) {
-    console.log("[Start] Audio no listo - intentando desbloquear...");
-    unlockAudioAndStart().then(() => {
-      console.log("[Start] Audio desbloqueado - cambiando a screen2");
-      setActiveScreen("screen2");
-    });
-    return;
-  }
-
-  // Si el audio está listo, cambiar directamente
-  console.log("[Start] Audio listo - cambiando a screen2");
-  setActiveScreen("screen2");
-}
-
-// Remover el listener anterior y agregar el nuevo
+// Simplificar el manejo del botón Start
 if (startBtn) {
-  startBtn.removeEventListener("click", handleStartGame); // Limpiar posibles duplicados
-  startBtn.addEventListener("click", handleStartGame);
+    // Remover todos los listeners anteriores
+    const newStartBtn = startBtn.cloneNode(true);
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+    
+    // Agregar nuevo listener simplificado
+    newStartBtn.addEventListener('click', () => {
+        console.log("[Start] Botón presionado");
+        
+        // Inicializar audio si es necesario
+        if (!audioCtx) {
+            initAudioSystem().then(() => {
+                audioCtx.resume();
+                audioReady = true;
+            }).catch(console.error);
+        }
+        
+        // Cambiar a screen2 inmediatamente
+        setActiveScreen("screen2");
+    });
 }
 
-// El resto de los event listeners se mantienen igual
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && screens.screen2?.classList.contains("active")) {
     panelEsc?.classList.toggle("active");
